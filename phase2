@@ -1,0 +1,44 @@
+---
+
+# 🖥️ Wazuh SIEM Deployment - Phase 2: System Auditing & Endpoint Monitoring
+
+This phase documents the expansion of the monitoring perimeter to a remote Windows host. It covers the deployment of the Wazuh Agent infrastructure, local architectural logging via Microsoft Sysmon, and the integration of a security-hardening configuration matrix to pipeline telemetry back to the central manager `buffer`.
+
+## 🏗️ Endpoint Topology
+* **Target OS:** Windows 10/11 x86_64
+* **Endpoint Hostname:** `window`
+* **Network Infrastructure:** Routed via dedicated Wi-Fi adapter network bridge to host VM.
+
+---
+
+## 🚀 Deployment Steps & Execution
+
+### 1. Wazuh Agent Infrastructure Provisioning
+The Wazuh agent was deployed on the remote Windows endpoint using an elevated PowerShell instance to fetch the official package and register the endpoint silently against the manager IP.
+
+```powershell
+# Executed via Administrator PowerShell to pull package and link manager
+Invoke-WebRequest -Uri "[https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.5-1.msi](https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.5-1.msi)" -OutFile "$env:tmp\wazuh-agent.msi"; msiexec.exe /i "$env:tmp\wazuh-agent.msi" /q WAZUH_MANAGER="192.168.18.157" WAZUH_AGENT_NAME="window"
+
+# Initialize local endpoint host service
+Start-Service -Name "Wazuh"
+
+# Navigate to deployment matrix workspace
+cd "$env:USERPROFILE\Downloads\Sysmon"
+
+# Install background service mapped to security configuration
+.\Sysmon64.exe -i sysmonconfig.xml
+
+<!-- File Location: C:\Program Files (x86)\ossec-agent\ossec.conf -->
+<localfile>
+  <location>Microsoft-Windows-Sysmon/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+
+# Apply configuration modifications by restarting the target agent
+Restart-Service -Name "Wazuh"
+
+## Verification
+Evidence of successful log ingestion on the Wazuh Threat Hunting dashboard:
+
+
