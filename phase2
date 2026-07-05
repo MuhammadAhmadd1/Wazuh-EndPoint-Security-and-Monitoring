@@ -38,7 +38,3 @@ cd "$env:USERPROFILE\Downloads\Sysmon"
 # Apply configuration modifications by restarting the target agent
 Restart-Service -Name "Wazuh"
 
-## Verification
-Evidence of successful log ingestion on the Wazuh Threat Hunting dashboard:
-
-![Sysmon Log Telemetry](wazuhEventLogs.png)
