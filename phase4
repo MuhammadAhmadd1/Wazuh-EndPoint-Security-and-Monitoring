@@ -1,0 +1,20 @@
+---
+
+## Phase 4: Integrating Live Threat Intelligence (MalwareBazaar)
+
+To upgrade the platform from a purely reactive monitoring tool to a proactive threat-hunting solution, I integrated an automated pipeline that pulls live Indicators of Compromise (IOCs) directly into the Wazuh Constant Database (CDB) engine.
+
+### Implementation Steps
+
+1. **Automated Ingestion Script**: Deployed a lightweight Python automation script (`scripts/fetch_malware_hashes.py`) on the Wazuh Manager to query the open-access MalwareBazaar daily feed, parse out active SHA256 malware signatures, and automatically compile them into a key-value format array (`/var/ossec/etc/lists/malwarebazaar_list`).
+2. **CDB List Registration**: Configured the manager's core architecture file (`ossec.conf`) to compile and track the ingested intelligence data matrix block:
+   ```xml
+   <list>etc/lists/malwarebazaar_list</list>
+
+<group name="syscheck,malware_intel,">
+  <rule id="100050" level="12">
+    <if_sid>554,550</if_sid>
+    <list field="sha256" lookup="match_key">etc/lists/malwarebazaar_list</list>
+    <description>MalwareBazaar Match: Critical Indicator of Compromise Found!</description>
+  </rule>
+</group>
